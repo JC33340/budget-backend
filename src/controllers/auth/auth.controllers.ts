@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import pool from '../../config/db.config';
 import { generateJWT, validateToken } from '../../utils/auth.utils';
 import { FieldPacket } from 'mysql2';
+import bcrypt from 'bcrypt';
 
 export const loginController = async (
   req: Request,
@@ -20,7 +21,8 @@ export const loginController = async (
   }
 
   //check password
-  if (row[0][0].password != password) {
+  const passwordsMatched = await bcrypt.compare(password, row[0][0].password);
+  if (!passwordsMatched) {
     return res.status(401).json({ message: 'incorrect password' });
   }
 
@@ -41,8 +43,17 @@ export const signupController = async (
     if (password != passwordConfirmation)
       throw new Error('Passwords do not match');
 
+    //password hashing
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
+    console.log(hashedPassword);
+
     //sending query
-    await pool.query('CALL add_new_user (?,?,?)', [email, name, password]);
+    await pool.query('CALL add_new_user (?,?,?)', [
+      email,
+      name,
+      hashedPassword
+    ]);
 
     //creating jwt
     const jwt = generateJWT(email);
