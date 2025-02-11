@@ -47,6 +47,7 @@ const convertError = (
 //handling endpoint which do not exist
 const endpointNotFound = (req: Request, res: Response, next: NextFunction) => {
   const err = new ApiError(404, 'Not Found', [{ msg: 'Not Found' }]);
+  console.log('endpoint hit');
   return handleError(err, req, res, next);
 };
 
