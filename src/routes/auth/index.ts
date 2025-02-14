@@ -38,15 +38,18 @@ router.post(
   authControllers.forgotPasswordController
 );
 
-router.post('/reset-password',
+router.post(
+  '/reset-password',
   [
-    body('email','email is not valid').notEmpty().isEmail().isString(),
-    body('token','token is not valid').notEmpty().isString(),
-    body('password','password is not valid').notEmpty().isString(),
-    body('passwordConfirmation','password confirmation is not valid').notEmpty().isString(),
+    body('email', 'email is not valid').notEmpty().isEmail().isString(),
+    body('token', 'token is not valid').notEmpty().isString(),
+    body('password', 'password is not valid').notEmpty().isString(),
+    body('passwordConfirmation', 'password confirmation is not valid')
+      .notEmpty()
+      .isString()
   ],
   inputValidation,
   authControllers.resetPasswordController
-)
+);
 
 export default router;

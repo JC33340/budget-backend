@@ -201,7 +201,9 @@ export const resetPasswordController = async (
     ]);
 
     //delete row for email in forgot password db
-    await pool.query(`DELETE FROM forgot_password WHERE id=?`,[tokenArr[0].id])
+    await pool.query(`DELETE FROM forgot_password WHERE id=?`, [
+      tokenArr[0].id
+    ]);
 
     //return
     res.status(200).json({ message: 'connected' });
