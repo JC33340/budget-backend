@@ -5,8 +5,9 @@ const inputValidation = (req: Request, res: Response, next: NextFunction) => {
   try {
     const result: Result<ValidationError> = validationResult(req);
 
-    if (!result.isEmpty())
-      return res.status(400).json({ errors: result.array() });
+    if (!result.isEmpty()) {
+      return res.status(400).json({ message: result.array() });
+    }
 
     next();
   } catch (e) {
