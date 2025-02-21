@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import pool from '../../config/db.config';
 import { generateJWT, validateToken } from '../../utils/auth.utils';
-import { FieldPacket } from 'mysql2';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import sgMail from '@sendgrid/mail';
@@ -13,9 +12,11 @@ export const loginController = async (
 ) => {
   const { email, password } = req.body;
   //querying database for password using email
-  const [row] = (await pool.query('CALL get_user_by_email_address (?)', [
-    email
-  ])) as [{ id: number; password: string }[][], FieldPacket[]];
+  const sqlInfo = await pool.query(
+    `SELECT id,password from users WHERE email = ? LIMIT 1;`,
+    [email]
+  );
+  const row = sqlInfo[0] as Array<{ id: number; password: string }>;
 
   //handling if there are no results
   if (row.length < 1) {
@@ -23,7 +24,7 @@ export const loginController = async (
   }
 
   //check password
-  const passwordsMatched = await bcrypt.compare(password, row[0][0].password);
+  const passwordsMatched = await bcrypt.compare(password, row[0].password);
   if (!passwordsMatched) {
     return res.status(401).json({ message: 'incorrect password' });
   }
@@ -50,11 +51,23 @@ export const signupController = async (
     const hashedPassword = await bcrypt.hash(password, salt);
 
     //sending query
-    await pool.query('CALL add_new_user (?,?,?)', [
+    await pool.query('INSERT INTO users (email,name,password) VALUES (?,?,?)', [
       email,
       name,
       hashedPassword
     ]);
+
+    //generate inital overall balance count
+    const user_id = await pool.query(
+      'SELECT id FROM users WHERE email=? LIMIT 1',
+      [email]
+    );
+    const user_id_arr = user_id[0] as Array<{ id: number }>;
+
+    await pool.query(
+      'INSERT INTO overall_balance (balance,user_id) VALUES (0,?)',
+      [user_id_arr[0].id]
+    );
 
     //creating jwt
     const jwt = generateJWT(email);
@@ -75,7 +88,7 @@ export const signupController = async (
   }
 };
 
-export const checkAuthController = (
+export const checkAuthController = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -99,7 +112,7 @@ export const checkAuthController = (
     return res.status(403).json({ message: 'token is invalid' });
   }
 
-  res.status(200).json({ message: user });
+  res.status(200).json({ message: 'token valid' });
 };
 
 export const forgotPasswordController = async (
@@ -111,21 +124,27 @@ export const forgotPasswordController = async (
     const { email } = req.body;
 
     //check that email exists
-    const [row] = (await pool.query(`CALL get_user_by_email_address (?)`, [
-      email
-    ])) as [{ id: number }[][], FieldPacket[]];
 
-    if (row[0].length < 1) {
+    const x = await pool.query(
+      'SELECT id,password FROM users WHERE email=? LIMIT 1',
+      [email]
+    );
+    const row = x[0] as Array<{ id: number; password: string }>;
+
+    if (row.length < 1) {
       return res.status(404).json({ message: 'email does not exist' });
     }
 
-    const userId = row[0][0].id;
+    const userId = row[0].id;
 
     //generate token
     const buf = crypto.randomBytes(20).toString('hex');
 
     //store token into database
-    await pool.query(`CALL add_forgot_password_entry (?,?)`, [buf, userId]);
+    await pool.query(
+      'INSERT INTO forgot_password (token, user_id) VALUES (?,?)',
+      [buf, userId]
+    );
 
     //send email to user
     sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);

@@ -16,10 +16,12 @@ export const validateToken = (token: string) => {
     if (err) {
       console.log(err);
       isValid = false;
-      return {};
+      return '';
     }
     isValid = true;
-    return user;
+    const email = JSON.stringify(user).split('"')[3];
+    return email;
   });
+
   return { isValid, user };
 };
