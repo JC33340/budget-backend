@@ -14,4 +14,26 @@ router.get(
   transactionControllers.pageInfo
 );
 
+router.post(
+  '/add-transaction',
+  [
+    body('value', 'value is empty').notEmpty().isFloat(),
+    header('authorization', 'token is not present').notEmpty()
+  ],
+  inputValidation,
+  authenticateToken,
+  transactionControllers.addTransaction
+);
+
+router.delete(
+  '/delete-transaction',
+  [
+    body('logId', 'value is empty').notEmpty().isInt(),
+    header('authorization', 'token is empty').notEmpty()
+  ],
+  inputValidation,
+  authenticateToken,
+  transactionControllers.deleteTransaction
+);
+
 export default router;

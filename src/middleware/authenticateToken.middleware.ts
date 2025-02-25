@@ -28,16 +28,16 @@ const authenticateToken = async (
 
   //check that email exists
   const email_sql = await pool.query(
-    'SELECT email from users WHERE email = ? LIMIT 1',
+    'SELECT id,email from users WHERE email = ? LIMIT 1',
     [isValid.user]
   );
-  const email_arr = email_sql[0] as Array<{ email: string }>;
+  const email_arr = email_sql[0] as Array<{ id: number; email: string }>;
   if (email_arr.length != 1) {
     return res.status(404).json({ message: 'Email does not exist' });
   }
 
   //add email into the request if token is valid
-  req.user = isValid.user;
+  req.user = { id: email_arr[0].id, email: isValid.user };
   next();
 };
 
