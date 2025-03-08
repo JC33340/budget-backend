@@ -1,14 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import pool from '../../config/db.config';
-import { Next } from 'mysql2/typings/mysql/lib/parsers/typeCast';
 
-type transactionLogsType = {
+export type transactionLogsType = {
   id: number;
   value: number;
   created_at: Date | string;
   tag: string;
   notes: string;
-  display_id: number;
 };
 
 export const pageInfo = async (
@@ -52,8 +50,7 @@ export const pageInfo = async (
           month: 'long',
           day: 'numeric',
           year: 'numeric'
-        }),
-        display_id: i + 1
+        })
       };
     });
 
@@ -61,23 +58,25 @@ export const pageInfo = async (
     //separating them into arrays, separated by their dates
     const formatedTransactions: transactionLogsType[][] = [];
 
-    let tempStorage = [];
+    let tempStorage: transactionLogsType[] = [];
 
     for (let i = 0; i < transaction_logs.length; i++) {
-      if (i === 0) {
-        tempStorage.push(transaction_logs[i]);
-      }
-      if (i === transaction_logs.length - 1) {
-        formatedTransactions.push(tempStorage);
-        continue;
-      }
-      if (tempStorage[0].created_at === transaction_logs[i].created_at) {
+      if (
+        i === 0 ||
+        tempStorage[0].created_at === transaction_logs[i].created_at
+      ) {
+        // Add to the current group if same date
         tempStorage.push(transaction_logs[i]);
       } else {
+        // Push the previous group and start a new one
         formatedTransactions.push(tempStorage);
-        tempStorage = [];
-        tempStorage.push(transaction_logs[i]);
+        tempStorage = [transaction_logs[i]];
       }
+    }
+
+    // Push the last group if it exists
+    if (tempStorage.length) {
+      formatedTransactions.push(tempStorage);
     }
 
     //return information
@@ -101,10 +100,11 @@ export const addTransaction = async (
     const { value, tag, notes } = req.body;
     const { id } = req.user;
     //insert data into db
-    await pool.query(
+    const getId = await pool.query(
       'INSERT INTO user_logs (value,tag,notes,user_id) VALUES (?,?,?,?)',
       [value, tag, notes, id]
     );
+    const id_obj = getId[0] as { insertId: number };
 
     //change overall balance
 
@@ -126,7 +126,11 @@ export const addTransaction = async (
     );
 
     //return new overall balance
-    return res.status(200).json({ message: 'item added', newBalance: balance });
+    return res.status(200).json({
+      message: 'item added',
+      newBalance: balance,
+      logId: id_obj.insertId
+    });
   } catch (e) {
     console.log(e);
     if (e instanceof Error) {
