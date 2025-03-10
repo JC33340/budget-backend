@@ -10,29 +10,36 @@ export const loginController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { email, password } = req.body;
-  //querying database for password using email
-  const sqlInfo = await pool.query(
-    `SELECT id,password from users WHERE email = ? LIMIT 1;`,
-    [email]
-  );
-  const row = sqlInfo[0] as Array<{ id: number; password: string }>;
+  try {
+    const { email, password } = req.body;
+    //querying database for password using email
+    const sqlInfo = await pool.query(
+      `SELECT id,password from users WHERE email = ? LIMIT 1;`,
+      [email]
+    );
+    const row = sqlInfo[0] as Array<{ id: number; password: string }>;
 
-  //handling if there are no results
-  if (row.length < 1) {
-    return res.status(404).json({ message: 'email does not exist' });
+    //handling if there are no results
+    if (row.length < 1) {
+      return res.status(404).json({ message: 'email does not exist' });
+    }
+
+    //check password
+    const passwordsMatched = await bcrypt.compare(password, row[0].password);
+    if (!passwordsMatched) {
+      return res.status(401).json({ message: 'incorrect password' });
+    }
+
+    //if no errors
+    const jwt = generateJWT(email);
+
+    res.status(200).json({ message: 'login success', jwt: jwt });
+  } catch (e) {
+    if (e instanceof Error) {
+      console.log(e);
+      res.status(500).json({ message: e.message });
+    }
   }
-
-  //check password
-  const passwordsMatched = await bcrypt.compare(password, row[0].password);
-  if (!passwordsMatched) {
-    return res.status(401).json({ message: 'incorrect password' });
-  }
-
-  //if no errors
-  const jwt = generateJWT(email);
-
-  res.status(200).json({ message: 'login success', jwt: jwt });
 };
 
 export const signupController = async (
@@ -49,14 +56,14 @@ export const signupController = async (
     //password hashing
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
-
+    console.log('running here');
     //sending query
     await pool.query('INSERT INTO users (email,name,password) VALUES (?,?,?)', [
       email,
       name,
       hashedPassword
     ]);
-
+    console.log('running here ?');
     //generate inital overall balance count
     const user_id = await pool.query(
       'SELECT id FROM users WHERE email=? LIMIT 1',
