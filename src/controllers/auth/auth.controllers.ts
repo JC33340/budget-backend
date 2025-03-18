@@ -56,14 +56,12 @@ export const signupController = async (
     //password hashing
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
-    console.log('running here');
     //sending query
     await pool.query('INSERT INTO users (email,name,password) VALUES (?,?,?)', [
       email,
       name,
       hashedPassword
     ]);
-    console.log('running here ?');
     //generate inital overall balance count
     const user_id = await pool.query(
       'SELECT id FROM users WHERE email=? LIMIT 1',
@@ -112,7 +110,7 @@ export const checkAuthController = async (
   token = token.split(' ')[1];
 
   //validating token and getting email address tied to it
-  const { isValid, user } = validateToken(token);
+  const { isValid } = validateToken(token);
 
   //handling if token is not valid
   if (!isValid) {
