@@ -25,3 +25,16 @@ export const pingdb = async (
   }
   return res.status(200).json({ hello: 'hello' });
 };
+
+export const wakedb = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await pool.query('SELECT * FROM users');
+  } catch (e) {
+    return res.status(200).json({ message: 'waking db' });
+  }
+  return res.status(200).json({ message: 'db awake' });
+};

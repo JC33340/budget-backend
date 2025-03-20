@@ -2,7 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth/index';
 import transactionRoutes from './transactions/index';
 import homePageRoutes from './homePage/index';
-import { pingdb } from '../controllers/database/database.controllers';
+import { wakedb } from '../controllers/database/database.controllers';
 
 const router = Router();
 
@@ -12,6 +12,6 @@ router.use('/transactions', transactionRoutes);
 
 router.use('/homepage', homePageRoutes);
 
-router.get('/pingdb', pingdb);
+router.get('/wakedb', wakedb);
 
 export default router;
