@@ -5,4 +5,6 @@ const router = Router();
 
 router.get('/wakedb', databaseControllers.wakedb);
 
+router.get('/pingdb', databaseControllers.pingdb);
+
 export default router;
