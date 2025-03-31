@@ -51,7 +51,7 @@ export const separateWeekly = (arr: transactionLogsType[]) => {
   const currentDate = new Date();
 
   //getting first and last day
-  const first = currentDate.getDate() - currentDate.getDay() + 1;
+  const first = currentDate.getDate() - currentDate.getDay();
 
   //getting first and last date
   const firstDay = new Date(currentDate.setDate(first))
@@ -88,7 +88,11 @@ export const separateWeekly = (arr: transactionLogsType[]) => {
   const weekSplitArr: [string, transactionLogsType[]][] = [];
 
   for (let i = 0; i < 7; i++) {
-    const day = new Date(currentDate.setDate(first + i)).toLocaleDateString(
+    //duplicating the date object to manipulate
+    const tempDate = new Date(currentDate);
+
+    //manipulating date
+    const day = new Date(tempDate.setDate(first + i)).toLocaleDateString(
       'en-GB',
       {
         weekday: 'short',

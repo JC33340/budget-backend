@@ -14,10 +14,10 @@ export const wakedb = async (
   res: Response,
   next: NextFunction
 ) => {
-    //logging if db is active and count the number of runs performed
+  //logging if db is active and count the number of runs performed
   let dbActive = false;
   let count = 0;
-  //query db until either it is active or count is greater than 30 
+  //query db until either it is active or count is greater than 30
   while (!dbActive && count < 30) {
     try {
       await pool.query('SELECT * FROM users WHERE email=?', [
