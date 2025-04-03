@@ -73,7 +73,8 @@ export const separateWeekly = (arr: transactionLogsType[]) => {
       ).toLocaleDateString('en-GB', {
         weekday: 'short',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        year: 'numeric'
       });
       weekArr.push(arrCopy[i]);
     } else {
