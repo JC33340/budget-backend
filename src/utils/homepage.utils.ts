@@ -101,7 +101,8 @@ export const separateWeekly = (arr: transactionLogsType[]) => {
       {
         weekday: 'short',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        year: 'numeric'
       }
     );
     const logArr = [];
