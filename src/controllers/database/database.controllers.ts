@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import pool from '../../config/db.config';
-import { checkdb } from '../../utils/database.utils';
-import { time } from 'console';
+// import { checkdb } from '../../utils/database.utils';
+// import { time } from 'console';
 
 const timeout = () => {
   return new Promise((resolve) => {
@@ -36,27 +36,28 @@ export const wakedb = async (
   }
 };
 
-export const pingdb = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  let active = false;
-  let count = 0;
+//not sure if this function removal will crash my app
+// export const pingdb = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   let active = false;
+//   let count = 0;
 
-  while (!active && count < 30) {
-    try {
-      await checkdb();
-    } catch (e) {
-      count += 1;
-      console.log(count);
-      continue;
-    }
-    active = true;
-  }
-  if (!active) {
-    return res.status(500).json({ message: 'Internal server error' });
-  } else {
-    return res.status(200).json({ message: 'db awake' });
-  }
-};
+//   while (!active && count < 30) {
+//     try {
+//       await checkdb();
+//     } catch (e) {
+//       count += 1;
+//       console.log(count);
+//       continue;
+//     }
+//     active = true;
+//   }
+//   if (!active) {
+//     return res.status(500).json({ message: 'Internal server error' });
+//   } else {
+//     return res.status(200).json({ message: 'db awake' });
+//   }
+// };

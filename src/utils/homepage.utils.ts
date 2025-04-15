@@ -1,8 +1,11 @@
 import type { transactionLogsType } from '../controllers/transactions/transactions.controllers';
 
+//split array into separate categories
 export const separateCategories = (arr: transactionLogsType[]) => {
-  //breaking down by category
-  const categorySort = [...arr].sort((a, b) => {
+  //make a deep copy of array
+  const arrCopy: transactionLogsType[] = JSON.parse(JSON.stringify(arr));
+  //sorting by category
+  const sortedCategories = arrCopy.sort((a, b) => {
     if (a.tag > b.tag) {
       return 1;
     } else {
@@ -10,118 +13,134 @@ export const separateCategories = (arr: transactionLogsType[]) => {
     }
   });
 
-  //splitting categories into a 2d array
-  const categorySplit: transactionLogsType[][] = [];
+  //separate into income and expense
+  const income = [];
+  const expense = [];
 
-  let categoryTemp: transactionLogsType[] = [];
-
-  for (let i = 0; i < categorySort.length; i++) {
-    if (i === 0 || categorySort[i].tag === categorySort[i - 1].tag) {
-      categoryTemp.push(categorySort[i]);
+  for (let item of sortedCategories) {
+    if (item.value > 0) {
+      income.push(item);
     } else {
-      categorySplit.push(categoryTemp);
-      categoryTemp = [categorySort[i]];
+      expense.push(item);
     }
   }
 
-  if (categoryTemp.length > 0) {
-    categorySplit.push(categoryTemp);
-  }
+  //function to get the sum of each category
+  const getSum = (arr: transactionLogsType[]): (string | number)[][] => {
+    //if there is nothing in the array then return empty value
+    if (arr.length === 0) return [];
 
-  //sum of each category
-  const categorySum = [];
-
-  for (let i = 0; i < categorySplit.length; i++) {
-    let sum = 0;
-    const sameCategory = categorySplit[i];
-    for (let j = 0; j < sameCategory.length; j++) {
-      sum += sameCategory[j].value;
+    //set initial sum and initial category
+    let tempSum = 0;
+    let currCategory = arr[0].tag;
+    const catSum = [];
+    //loop through array to sum the values
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i].tag === currCategory) {
+        tempSum += arr[i].value;
+      } else {
+        catSum.push([currCategory, tempSum]);
+        currCategory = arr[i].tag;
+        tempSum = arr[i].value;
+      }
     }
-    categorySum.push([sameCategory[0].tag, sum]);
-  }
 
-  return Object.fromEntries(categorySum);
+    //push the final category if there is a value there
+    if (tempSum) {
+      catSum.push([currCategory, tempSum]);
+    }
+    return catSum;
+  };
+
+  //getting the income and expense split
+  const incomeSum = getSum(income);
+  const expenseSum = getSum(expense);
+
+  //returning an object with income and expense as categories
+  return Object.fromEntries([
+    ['income', incomeSum],
+    ['expense', expenseSum]
+  ]);
 };
 
+//format weekly array information
 export const separateWeekly = (arr: transactionLogsType[]) => {
+  //create a copy of the array
+  const arrCopy: transactionLogsType[] = JSON.parse(JSON.stringify(arr));
+
+  const weekArr = [];
+
+  //get start of the week day
+  const currDate = new Date();
+  const date = currDate.getDate();
+  const day = currDate.getDay();
+  const startDate = date - day;
+
+  //change log array date format
+  for (let item of arrCopy) {
+    item.created_at = new Date(item.created_at).toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short'
+    });
+  }
+
+  //generate week array
+  for (let i = 0; i < 7; i++) {
+    const weekDay = new Date();
+    weekDay.setDate(startDate + i);
+    const dateString = weekDay.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      weekday: 'short'
+    });
+
+    //filter arr copy to find matching log arrays
+    const filter = arrCopy.filter((log) => log.created_at === dateString);
+    weekArr.push([dateString, filter]);
+  }
+
+  return weekArr;
+};
+
+//get only 10 most recent transactions
+export const separateRecent = (arr: transactionLogsType[]) => {
   //create a copy of array
-  const arrCopy = [...arr];
+  let recent_arr = JSON.parse(JSON.stringify(arr));
+  recent_arr = recent_arr.slice(0, 10);
+  return recent_arr;
+};
 
+//separating into current week information
+export const getWeekly = (arr: transactionLogsType[]) => {
   //get current date
-  const currentDate = new Date();
+  const currDate = new Date();
 
-  //getting first day
-  const first = currentDate.getDate() - currentDate.getDay();
+  //get date of current day
+  const date = currDate.getDate();
 
-  //getting first date
-  const firstDay = new Date(currentDate.setDate(first))
-    .setHours(0, 0, 0, 0)
-    .toString();
+  //get day of current day
+  const day = currDate.getDay();
 
-  let weekArr = [];
+  //get start date
+  const start = new Date();
+  start.setDate(date - day);
+  start.setHours(0, 59, 59);
 
-  //getting date of first day
-  const firstDate = currentDate.getDate();
+  //deep copy of array
+  const arrCopy = JSON.parse(JSON.stringify(arr));
+  const weeklyArr = [];
 
-  //splitting only the logs from the current week
+  //separate into current week
   for (let i = 0; i < arrCopy.length; i++) {
-    const itemDate = arrCopy[i].created_at;
-    if (itemDate >= firstDay) {
-      //change the created_at format
-      arrCopy[i].created_at = new Date(
-        arrCopy[i].created_at
-      ).toLocaleDateString('en-GB', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-      weekArr.push(arrCopy[i]);
+    const itemDate = new Date(arrCopy[i].created_at);
+    if (itemDate > start) {
+      weeklyArr.push(arrCopy[i]);
     } else {
-      //prevent further loops
       break;
     }
   }
 
-  //reverse the array so it is sorted in ascending order
-  weekArr = weekArr.reverse();
-
-  //splitting into a 3d array for each day of the week
-
-  //generate initial 3d array with all the days
-  const weekSplitArr: [string, transactionLogsType[]][] = [];
-
-  for (let i = 0; i < 7; i++) {
-    //duplicating the date object to manipulate
-    const tempDate = new Date(currentDate);
-
-    //manipulating date
-    const day = new Date(tempDate.setDate(firstDate + i)).toLocaleDateString(
-      'en-GB',
-      {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      }
-    );
-    const logArr = [];
-
-    //collecting all the logs with the same date
-    for (let j = 0; j < weekArr.length; j++) {
-      if (weekArr[j].created_at === day) {
-        logArr.push(weekArr[j]);
-      }
-    }
-    weekSplitArr.push([day, logArr]);
-  }
-
-  return weekSplitArr;
-};
-
-export const separateRecent = (arr: transactionLogsType[]) => {
-  //create a copy of array
-  let recent_arr = [...arr];
-  recent_arr = recent_arr.slice(0, 10);
-  return recent_arr;
+  //return weekly array
+  return weeklyArr;
 };

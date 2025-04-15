@@ -4,7 +4,8 @@ import type { transactionLogsType } from '../transactions/transactions.controlle
 import {
   separateCategories,
   separateWeekly,
-  separateRecent
+  separateRecent,
+  getWeekly
 } from '../../utils/homepage.utils';
 
 export const pageInfo = async (
@@ -30,11 +31,14 @@ export const pageInfo = async (
     const balance_arr = balance_sql[0] as Array<{ balance: number }>;
     //formatting log data
 
+    //getting current week of information
+    const weeklyInfo = getWeekly(logs_arr);
+
     //splitting into separate categories
-    const splitCategories = separateCategories(logs_arr);
+    const splitCategories = separateCategories(weeklyInfo);
 
     //sorting into days of the week
-    const splitWeekly = separateWeekly(logs_arr);
+    const splitWeekly = separateWeekly(weeklyInfo);
 
     //recent transactions
     const recentTransactions = separateRecent(logs_arr);
